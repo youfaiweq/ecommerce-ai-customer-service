@@ -1,0 +1,333 @@
+[
+  {
+    "id": "nora-pro-2",
+    "sku": "NORA · EAR-A12",
+    "name": "NORA Pro 2",
+    "name_en": "NORA Pro 2",
+    "tagline": "头戴式主动降噪耳机",
+    "tagline_en": "Over-ear ANC headphones",
+    "description": "第八代自适应降噪算法。钛合金一体成型机身，38 小时续航。听得见安静下来的城市。",
+    "description_en": "8th-gen adaptive noise cancellation. Titanium unibody, 38h battery. Hear your city fall silent.",
+    "price": 2899,
+    "msrp": 3399,
+    "currency": "CNY",
+    "category": "headphones",
+    "badges": [
+      "sale",
+      "new"
+    ],
+    "stock": "in_stock",
+    "accent_hex": "#0071E3",
+    "variants": [
+      "钛黑",
+      "星白",
+      "雾灰"
+    ],
+    "specs": [
+      {
+        "label": "续航",
+        "label_en": "Battery",
+        "value": "38 小时",
+        "value_en": "38 hours"
+      },
+      {
+        "label": "降噪深度",
+        "label_en": "ANC depth",
+        "value": "−52 dB",
+        "value_en": "-52 dB"
+      },
+      {
+        "label": "驱动单元",
+        "label_en": "Driver",
+        "value": "钛 40 mm",
+        "value_en": "Titanium 40 mm"
+      },
+      {
+        "label": "重量",
+        "label_en": "Weight",
+        "value": "280 g",
+        "value_en": "280 g"
+      },
+      {
+        "label": "连接",
+        "label_en": "Connectivity",
+        "value": "Bluetooth 5.3 · LDAC",
+        "value_en": "BT 5.3 · LDAC"
+      }
+    ],
+    "images": [
+      {
+        "variant": "front",
+        "url": "/products/nora-pro-2-front.png"
+      },
+      {
+        "variant": "side",
+        "url": "/products/nora-pro-2-side.png"
+      },
+      {
+        "variant": "case",
+        "url": "/products/nora-pro-2-case.png"
+      }
+    ]
+  },
+  {
+    "id": "nora-pro-2-mini",
+    "sku": "NORA · EAR-B03",
+    "name": "NORA Pro 2 Mini",
+    "name_en": "NORA Pro 2 Mini",
+    "tagline": "真无线降噪 · 入耳",
+    "tagline_en": "True-wireless ANC in-ear",
+    "description": "轻量级真无线。主动降噪、空间音频、磁吸充电。",
+    "description_en": "Lightweight true-wireless with ANC, spatial audio and magnetic charging.",
+    "price": 1399,
+    "currency": "CNY",
+    "category": "headphones",
+    "badges": [
+      "new"
+    ],
+    "stock": "in_stock",
+    "accent_hex": "#0071E3",
+    "variants": [
+      "钛黑",
+      "瓷白"
+    ],
+    "specs": [
+      {
+        "label": "续航",
+        "label_en": "Battery",
+        "value": "24 小时（含充电盒）",
+        "value_en": "24 hours (w/ case)"
+      },
+      {
+        "label": "降噪深度",
+        "label_en": "ANC depth",
+        "value": "−40 dB",
+        "value_en": "-40 dB"
+      },
+      {
+        "label": "单元",
+        "label_en": "Driver",
+        "value": "11 mm 钛涂层",
+        "value_en": "11mm titanium-coated"
+      },
+      {
+        "label": "重量",
+        "label_en": "Weight",
+        "value": "单只 5.4 g",
+        "value_en": "5.4 g each"
+      }
+    ],
+    "images": [
+      {
+        "variant": "front",
+        "url": "/products/nora-pro-2-mini-front.png"
+      },
+      {
+        "variant": "case",
+        "url": "/products/nora-pro-2-mini-case.png"
+      }
+    ]
+  },
+  {
+    "id": "nora-watch-titanium",
+    "sku": "NORA · WT-S09",
+    "name": "NORA Watch · 钛合金版",
+    "name_en": "NORA Watch · Titanium",
+    "tagline": "GPS 运动手表 · 钛合金",
+    "tagline_en": "GPS sport watch · Titanium",
+    "description": "5 级航空级钛合金 CNC 切削。AMOLED 屏幕、双频 GPS、14 天续航。",
+    "description_en": "Grade-5 titanium CNC. AMOLED display, dual-frequency GPS, 14-day battery.",
+    "price": 4599,
+    "currency": "CNY",
+    "category": "watches",
+    "badges": [
+      "new"
+    ],
+    "stock": "in_stock",
+    "accent_hex": "#0071E3",
+    "variants": [
+      "42mm",
+      "46mm",
+      "钛黑",
+      "钛银"
+    ],
+    "specs": [
+      {
+        "label": "续航",
+        "label_en": "Battery",
+        "value": "14 天",
+        "value_en": "14 days"
+      },
+      {
+        "label": "屏幕",
+        "label_en": "Display",
+        "value": "1.4\" AMOLED · 1000 nit",
+        "value_en": "1.4\" AMOLED · 1000 nit"
+      },
+      {
+        "label": "外壳",
+        "label_en": "Case",
+        "value": "5 级钛合金",
+        "value_en": "Grade-5 titanium"
+      },
+      {
+        "label": "防水",
+        "label_en": "Water resistance",
+        "value": "10 ATM",
+        "value_en": "10 ATM"
+      },
+      {
+        "label": "重量",
+        "label_en": "Weight",
+        "value": "38 g",
+        "value_en": "38 g"
+      }
+    ],
+    "images": [
+      {
+        "variant": "front",
+        "url": "/products/nora-watch-titanium-front.png"
+      },
+      {
+        "variant": "side",
+        "url": "/products/nora-watch-titanium-side.png"
+      }
+    ]
+  },
+  {
+    "id": "nora-speaker-travel",
+    "sku": "NORA · SP-X1",
+    "name": "NORA Travel · 便携音箱",
+    "name_en": "NORA Travel · Speaker",
+    "tagline": "24h 续航 · IPX7 防水",
+    "tagline_en": "24h battery · IPX7",
+    "description": "紧凑的家用 / 户外两用音箱。360° 全向发声，超长续航。",
+    "description_en": "Compact home/outdoor speaker. 360° sound, extra-long battery.",
+    "price": 1299,
+    "currency": "CNY",
+    "category": "speakers",
+    "stock": "soldout",
+    "accent_hex": "#FF9500",
+    "specs": [
+      {
+        "label": "续航",
+        "label_en": "Battery",
+        "value": "24 小时",
+        "value_en": "24 hours"
+      },
+      {
+        "label": "防水",
+        "label_en": "Water resistance",
+        "value": "IPX7",
+        "value_en": "IPX7"
+      },
+      {
+        "label": "输出",
+        "label_en": "Output",
+        "value": "20 W · 360°",
+        "value_en": "20 W · 360°"
+      },
+      {
+        "label": "蓝牙",
+        "label_en": "Bluetooth",
+        "value": "5.3 · Auracast",
+        "value_en": "5.3 · Auracast"
+      }
+    ],
+    "images": [
+      {
+        "variant": "front",
+        "url": "/products/nora-speaker-travel-front.png"
+      }
+    ]
+  },
+  {
+    "id": "nora-charger-3in1",
+    "sku": "NORA · CHR-P3",
+    "name": "NORA Charger · 三合一",
+    "name_en": "NORA Charger · 3-in-1",
+    "tagline": "磁吸 · 桌面收纳",
+    "tagline_en": "Magnetic desktop cradle",
+    "description": "一台同时为耳机、手表、手机充电。磁吸定位、氮化镓快充。",
+    "description_en": "Charge earbuds, watch and phone at once. Magnetic alignment, GaN fast-charge.",
+    "price": 459,
+    "currency": "CNY",
+    "category": "accessories",
+    "stock": "in_stock",
+    "accent_hex": "#34C759",
+    "specs": [
+      {
+        "label": "输出",
+        "label_en": "Output",
+        "value": "15 W × 3 路",
+        "value_en": "15 W × 3 ports"
+      },
+      {
+        "label": "协议",
+        "label_en": "Protocol",
+        "value": "MagSafe · Qi2",
+        "value_en": "MagSafe · Qi2"
+      },
+      {
+        "label": "材质",
+        "label_en": "Material",
+        "value": "铝合金 + 硅胶",
+        "value_en": "Aluminum + silicone"
+      }
+    ],
+    "images": [
+      {
+        "variant": "front",
+        "url": "/products/nora-charger-3in1-front.png"
+      }
+    ]
+  },
+  {
+    "id": "nora-cable-pro",
+    "sku": "NORA · CB-C01",
+    "name": "NORA Cable · 编织线",
+    "name_en": "NORA Cable · Braided",
+    "tagline": "100 W 编织快充线",
+    "tagline_en": "100 W braided fast-charge",
+    "description": "尼龙编织 + 铝合金接头。100 W PD、5A 大电流、耐弯折 10 万次。",
+    "description_en": "Nylon braiding, aluminum connectors. 100 W PD, 5 A, 100k+ bend life.",
+    "price": 99,
+    "currency": "CNY",
+    "category": "accessories",
+    "badges": [
+      "sale"
+    ],
+    "stock": "low_stock",
+    "accent_hex": "#6E6E73",
+    "variants": [
+      "1m",
+      "2m"
+    ],
+    "specs": [
+      {
+        "label": "功率",
+        "label_en": "Power",
+        "value": "100 W PD",
+        "value_en": "100 W PD"
+      },
+      {
+        "label": "接口",
+        "label_en": "Connector",
+        "value": "USB-C ↔ USB-C",
+        "value_en": "USB-C ↔ USB-C"
+      },
+      {
+        "label": "认证",
+        "label_en": "Cert.",
+        "value": "USB-IF",
+        "value_en": "USB-IF"
+      }
+    ],
+    "images": [
+      {
+        "variant": "front",
+        "url": "/products/nora-cable-pro-front.png"
+      }
+    ]
+  }
+]

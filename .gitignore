@@ -1,0 +1,59 @@
+# 依赖
+node_modules/
+**/node_modules/
+.pnpm-store/
+
+# 构建产物
+dist/
+.vite/
+.cache/
+next/
+.nuxt/
+.output/
+
+# Python 后端
+**/.venv/
+**/__pycache__/
+**/*.pyc
+**/data/app.db
+**/data/orders.json.bak
+**/data/faster-whisper-cache/
+**/data/whisper-cache/
+
+# 日志
+*.log
+logs/
+npm-debug.log*
+
+# 临时调试产物（命令输出重定向的 scratch 文件，如 _asr.log / _health.txt）
+_*.txt
+_*.log
+**/_*.txt
+**/_*.log
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# 环境
+.env
+.env.local
+**/.env.local
+
+# AI 工具内部产物（不公开）
+.workbuddy/
+.trae/
+.trae-html-share-packages/
+nora-project-review/
+对项目的注释.txt
+
+# 构建缓存
+*.tsbuildinfo
+
+# 测试临时产物
+.test-tmp/
+tests-collect.txt
+ecommerce-ai-customer-service/test_*.wav

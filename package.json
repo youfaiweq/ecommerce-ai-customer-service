@@ -1,0 +1,24 @@
+{
+  "name": "nora-store",
+  "private": true,
+  "version": "0.1.0",
+  "description": "NORA 3C e-commerce monorepo · 极简 Apple 风门店前端 + FastAPI AI 客服后端",
+  "workspaces": [
+    "apps/*",
+    "ecommerce-ai-customer-service"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "npm run dev -w @nora/api",
+    "dev:web": "npm run dev -w @nora/web",
+    "build": "npm run build:web",
+    "build:web": "npm run build -w @nora/web",
+    "preview": "npm run preview -w @nora/web",
+    "test:web": "npm run test -w @nora/web -- --run",
+    "test:api": "cd ecommerce-ai-customer-service && if not exist .test-tmp mkdir .test-tmp && set TMP=%CD%\\.test-tmp && set TEMP=%CD%\\.test-tmp && .venv/Scripts/python.exe -m pytest -q -p no:cacheprovider --basetemp=.test-tmp\\pytest-root",
+    "test": "concurrently -n web,api -c blue,magenta \"npm run test:web\" \"npm run test:api\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

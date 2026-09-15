@@ -1,0 +1,42 @@
+[
+  {
+    "user_id": "u1001",
+    "name": "张伟",
+    "email": "u1001@demo.nora",
+    "salt": "29952a40f2be1627f12de76e1bb69341",
+    "password_hash": "9188bd4615410ccd4f203de6eb311f9275bc0bdc912b28fa4a94002dcc402522",
+    "iterations": 100000,
+    "algorithm": "pbkdf2_hmac_sha256",
+    "created_at": "2026-09-14 10:00:00"
+  },
+  {
+    "user_id": "u1002",
+    "name": "王芳",
+    "email": "u1002@demo.nora",
+    "salt": "1530b8a884abd8679bb55d2711bb0727",
+    "password_hash": "ec22def28dde1edf9057f5efb29d4f32924cdb0dfd2c7804694615004fc6fd0b",
+    "iterations": 100000,
+    "algorithm": "pbkdf2_hmac_sha256",
+    "created_at": "2026-09-14 10:00:00"
+  },
+  {
+    "user_id": "u1003",
+    "name": "李娜",
+    "email": "u1003@demo.nora",
+    "salt": "756afcad3f7025f1d6e284edb638bef9",
+    "password_hash": "cdf49d13858e20a7b17103efa218f0c3940da1557bfc35a856c962c723f9794d",
+    "iterations": 100000,
+    "algorithm": "pbkdf2_hmac_sha256",
+    "created_at": "2026-09-14 10:00:00"
+  },
+  {
+    "user_id": "u1004",
+    "name": "陈晨",
+    "email": "u1004@demo.nora",
+    "salt": "1d38c57b9bc4881dceab14cf788fc0b8",
+    "password_hash": "cde5a41354c40e6ae73acebc0bac806fe36a2ca1da27692b2e810ef9cdb592a8",
+    "iterations": 100000,
+    "algorithm": "pbkdf2_hmac_sha256",
+    "created_at": "2026-09-14 10:00:00"
+  }
+]

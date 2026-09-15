@@ -1,0 +1,151 @@
+# =============================================================================
+# Builder stage 1: 安装 Python 依赖到独立 prefix
+# debian-slim 基础镜像 ~190MB + Python 依赖 ~85MB → 默认约 290MB
+# 启用 ASR （--build-arg WITH_ASR=1）再增 ~280MB（ctranslate2/onnxruntime/av）
+# 如需 < 200MB：使用默认 ``Dockerfile`` (alpine)，但 ASR 用不了（ctranslate2 无 musl wheel）
+# =============================================================================
+FROM python:3.13-slim AS builder
+
+ARG WITH_ASR=0
+ARG PRELOAD_MODEL=0
+ARG ASR_MODEL_SIZE=small
+
+ENV PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+WORKDIR /build
+
+# 仅先复制依赖清单，最大化缓存复用
+COPY requirements.txt requirements-asr.txt* ./
+
+# 主依赖（永远装）
+RUN pip install --prefix=/install -r requirements.txt
+
+# 可选 ASR 依赖（仅 WITH_ASR=1 时装，会显著增大镜像 ~280MB）
+RUN if [ "$WITH_ASR" = "1" ] && [ -f requirements-asr.txt ]; then \
+        echo "==> WITH_ASR=1：额外安装 faster-whisper" && \
+        pip install --prefix=/install -r requirements-asr.txt ; \
+    else \
+        echo "==> WITH_ASR=0：跳过 faster-whisper（默认，镜像保持 < 200MB）" ; \
+    fi
+
+
+# =============================================================================
+# Builder stage 2 (optional): 预下载 ASR 模型
+# 触发条件：WITH_ASR=1 AND PRELOAD_MODEL=1
+# 行为：faster-whisper 在 builder 阶段触发 ``WhisperModel(...)`` 懒下载，
+#       模型落在 ``/build/hf-cache``，再被 runtime 阶段 COPY 走。
+# 失败兜底：网络不可达时本步骤失败但 build 继续（用 ``|| true``），
+#          运行时仍可按需下载；可用 ``docker build --no-cache`` 重试。
+# =============================================================================
+FROM builder AS model-downloader
+
+ARG WITH_ASR=0
+ARG PRELOAD_MODEL=0
+ARG ASR_MODEL_SIZE=small
+
+ENV HF_HOME=/build/hf-cache \
+    HF_HUB_CACHE=/build/hf-cache/hub
+
+# 即使 PRELOAD_MODEL=0 也要创建目录，让后续 COPY --from 永远不报错
+RUN mkdir -p /build/hf-cache/hub
+
+RUN if [ "$WITH_ASR" = "1" ] && [ "$PRELOAD_MODEL" = "1" ]; then \
+        echo "==> PRELOAD_MODEL=1：尝试预下载 ${ASR_MODEL_SIZE} 模型到镜像..." && \
+        pip install --quiet faster-whisper && \
+        python -c "from faster_whisper import WhisperModel; \
+m = WhisperModel('${ASR_MODEL_SIZE}', device='cpu', compute_type='int8', model_dir='/build/hf-cache/hub'); \
+print('model loaded ok')" \
+        || echo "==> 预下载失败（网络问题），但 build 继续；运行时将按需下载" ; \
+    else \
+        echo "==> PRELOAD_MODEL=0：跳过模型预下载" ; \
+    fi
+
+
+# =============================================================================
+# Runtime stage: 仅复制安装好的依赖与源码，体积最小
+# =============================================================================
+FROM python:3.13-slim AS runtime
+
+ARG WITH_ASR=0
+ARG PRELOAD_MODEL=0
+ARG ASR_MODEL_SIZE=small
+ENV WITH_ASR=${WITH_ASR} \
+    PRELOAD_MODEL=${PRELOAD_MODEL} \
+    ASR_MODEL_SIZE=${ASR_MODEL_SIZE}
+
+# 安装 tini（init + 信号转发）+ curl（健康检查）+ ca-certificates（HTTPS 出站）
+# ASR 还要 libsndfile (av 音频解码) + libgomp (ctranslate2 OpenMP)；仅 WITH_ASR=1 时装
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        tini curl ca-certificates \
+        $(if [ "$WITH_ASR" = "1" ]; then echo "libsndfile1 libgomp1 ffmpeg"; fi) \
+    && rm -rf /var/lib/apt/lists/*
+
+# 创建非 root 用户
+RUN groupadd --system app && useradd --system --gid app --create-home --home-dir /home/app app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONPATH=/app \
+    PATH="/usr/local/bin:${PATH}" \
+    HF_HOME=/home/app/.cache/huggingface \
+    ASR_MODEL_DIR=/home/app/.cache/huggingface
+
+WORKDIR /app
+
+# 从 builder 复制已安装的 Python 包到 /usr/local
+COPY --from=builder /install/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+COPY --from=builder /install/bin /usr/local/bin
+
+# 清理 pip（运行时不需要；保留 ensurepip 会自动重新生成）
+# 同步清理 __pycache__ / 测试 / 文档 / locale，常见能省 ~15MB
+RUN find /usr/local/lib/python3.13/site-packages \
+        \( -type d -name '__pycache__' -o -type d -name 'tests' -o -type d -name 'test' \) \
+        -exec rm -rf {} + 2>/dev/null || true \
+    && find /usr/local/lib/python3.13/site-packages \
+        -name '*.pyc' -o -name '*.pyo' -o -name '*.dist-info/RECORD*' \
+        -delete 2>/dev/null || true \
+    && rm -rf /usr/local/lib/python3.13/site-packages/pip* \
+            /usr/local/lib/python3.13/site-packages/_pip* \
+            /usr/local/share/doc /usr/local/share/man \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache
+
+# 仅复制应用代码（.dockerignore 已排除 .env / .venv / tests）
+COPY --chown=app:app app/ ./app/
+COPY --chown=app:app data/ ./data/
+COPY --chown=app:app frontend/ ./frontend/
+
+# entrypoint 脚本：打印 ASR 状态后再 exec CMD
+COPY --chown=root:root docker-entrypoint-slim.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh
+
+# pre-create 模型缓存目录（ASR 运行时下载到此目录）
+RUN mkdir -p /home/app/.cache/huggingface \
+    && chown -R app:app /home/app
+
+# 总是从 model-downloader 复制 hf-cache（即使为空也要保证目录结构一致）
+# 使用 ``COPY --exclude`` 不可行（Docker 不支持），所以用 glob：
+# 若 /build/hf-cache 实际包含模型文件，COPY 整个目录；否则空目录占位
+COPY --from=model-downloader --chown=app:app /build/hf-cache/ /home/app/.cache/huggingface/
+
+# 验证：列出预下载的模型（仅 PRELOAD_MODEL=1 且下载成功时有内容）
+RUN if [ -d /home/app/.cache/huggingface/hub ]; then \
+        echo "==> Preloaded ASR models:" && \
+        du -sh /home/app/.cache/huggingface/hub/*/ 2>/dev/null || true ; \
+    else \
+        echo "==> No preloaded ASR model (PRELOAD_MODEL=0 或预下载失败)" ; \
+    fi
+
+USER app
+
+EXPOSE 8000
+
+# 健康检查：直接 HTTP 调用 /health（python -c 启动慢）
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -fsS http://127.0.0.1:8000/health || exit 1
+
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/docker-entrypoint.sh"]
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

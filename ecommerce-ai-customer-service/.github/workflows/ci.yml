@@ -1,0 +1,199 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  # ----------------------------------------------------------------------
+  # Lint + 测试 + 覆盖率
+  # ----------------------------------------------------------------------
+  test:
+    name: lint + test (Python ${{ matrix.python-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Ruff lint
+        run: |
+          pip install ruff
+          ruff check app/ tests/ --output-format=github
+
+      - name: Run pytest
+        run: |
+          pytest -v --tb=short --maxfail=5
+
+  # ----------------------------------------------------------------------
+  # Docker 构建验证（不推镜像）
+  # ----------------------------------------------------------------------
+  docker:
+    name: docker build (ubuntu)
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (no push)
+        run: docker build -t ecommerce-ai-customer-service:ci .
+
+      - name: Image size
+        run: |
+          SIZE=$(docker image inspect ecommerce-ai-customer-service:ci --format='{{.Size}}')
+          echo "Image size: $SIZE bytes"
+          # 软上限：200MB（P1 目标 ~150MB，留 25% 余量给后续安装依赖）
+          SIZE_MB=$((SIZE / / 1024 / / 1024))
+          if [ "$SIZE_MB" -gt 200 ]; then
+            echo "::error::镜像过大 ($SIZE_MB MB)，目标 < 200MB"
+            exit 1
+          fi
+
+      - name: Smoke test (imports)
+        run: |
+          docker run --rm ecommerce-ai-customer-service:ci \
+            python -c "from app.main import app; print('app loaded ok')"
+
+  # ----------------------------------------------------------------------
+  # Lint 单独跑（Ubuntu 单线）
+  # ----------------------------------------------------------------------
+  ruff-only:
+    name: ruff (ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install ruff
+      - run: ruff check app/ tests/
+
+  # ----------------------------------------------------------------------
+  # ASR e2e：构建 slim+ASR 镜像 + 启动容器 + 上传音频 + 校验端点
+  # 用 ``docker compose --profile asr`` 复用生产环境编排。
+  # CI 默认不预下载模型（PRELOAD_MODEL=0），仅验证：
+  #   1. slim+ASR 镜像构建通过
+  #   2. 容器启动 healthy
+  #   3. /asr/status 端点返回正确结构
+  #   4. POST /chat/audio 在网络隔离时返回 503 + asr_model_download_failed（结构正确）
+  # 如果想跑真实转写，请设置 GitHub Actions secret ``HF_TOKEN`` 并改 PRELOAD_MODEL=1
+  # ----------------------------------------------------------------------
+  asr-e2e:
+    name: ASR e2e (compose)
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate test audio
+        run: |
+          # 2s 静音 + 1kHz tone + 静音，2s 16kHz mono 16-bit PCM
+          python -c "
+          import math, struct, wave
+          SR, DUR = 16000, 2.0
+          N = int(SR * DUR)
+          with wave.open('/tmp/test_tone.wav', 'wb') as w:
+              w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR)
+              frames = bytearray()
+              for i in range(N):
+                  t = i / SR
+                  v = 0.3 * math.sin(2 * math.pi * 440 * t) if 0.5 <= t < 1.5 else 0.0
+                  frames += struct.pack('<h', int(v * 32767))
+              w.writeframes(bytes(frames))
+          print('test_tone.wav generated,', N, 'samples')
+          "
+
+      - name: Build slim+ASR image (no preload)
+        run: |
+          docker build -t ecs-asr:ci -f Dockerfile.slim \
+            --build-arg WITH_ASR=1 \
+            --build-arg PRELOAD_MODEL=0 \
+            --build-arg ASR_MODEL_SIZE=base \
+            .
+
+      - name: Boot container and wait for healthy
+        run: |
+          docker run -d --rm --name ecs-asr-ci \
+            -p 8123:8000 \
+            -e DATA_DIR=data -e LOG_DB_PATH=data/app.db \
+            -e DEBUG=true -e ASR_ENABLED=true -e ASR_MODEL_SIZE=base \
+            ecs-asr:ci
+          # 等待 health（最长 60s）
+          for i in $(seq 1 30); do
+            status=$(docker inspect --format='{{.State.Health.Status}}' ecs-asr-ci 2>/dev/null || echo "starting")
+            if [ "$status" = "healthy" ]; then
+              echo "container healthy after ${i} polls"
+              break
+            fi
+            sleep 2
+          done
+          docker ps --filter name=ecs-asr-ci --format "{{.Status}}"
+
+      - name: Verify /asr/status
+        run: |
+          body=$(curl -fsS http://127.0.0.1:8123/asr/status)
+          echo "Response: $body"
+          # enabled=true, loaded=false（首次请求前）
+          echo "$body" | python -c "
+          import json, sys
+          d = json.loads(sys.stdin.read())
+          assert d.get('enabled') is True, f'enabled should be True, got {d.get(\"enabled\")}'
+          assert d.get('loaded') is False, f'loaded should be False (no preload), got {d.get(\"loaded\")}'
+          assert d.get('model_size') == 'base', f'model_size mismatch: {d.get(\"model_size\")}'
+          assert 'load_attempts' in d
+          print('/asr/status OK')
+          "
+
+      - name: Verify /chat/audio returns structured 503 on network failure
+        run: |
+          # 预期：在 CI 没有 HF 网络时，/chat/audio 返回 503 + asr_model_download_failed
+          # 这是 CORRECT 行为（系统识别了网络不可达，告知用户启用 PRELOAD_MODEL=1）
+          status=$(curl -sS -o /tmp/asr_resp.json -w '%{http_code}' \
+            -X POST -F file=@/tmp/test_tone.wav \
+            http://127.0.0.1:8123/chat/audio || echo "000")
+          echo "HTTP status: $status"
+          cat /tmp/asr_resp.json
+          echo
+          python -c "
+          import json
+          with open('/tmp/asr_resp.json') as f:
+              d = json.load(f)
+          err = d.get('error', {})
+          code = err.get('code', '')
+          msg = err.get('message', '')
+          # 接受 503（网络问题） 或 422（音频问题） → 都证明端点工作
+          assert code in ('http_503', 'http_422'), f'unexpected code: {code}'
+          # message 应该含 'asr_model_download_failed' 或 'asr_transcribe_failed'
+          assert ('asr_model_download_failed' in msg
+                  or 'asr_transcribe_failed' in msg
+                  or 'asr_empty_audio' in msg), f'no ASR error code in message: {msg}'
+          print('ASR endpoint returns structured error correctly')
+          "
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker rm -f ecs-asr-ci 2>/dev/null || true
+          docker rmi ecs-asr:ci 2>/dev/null || true

@@ -1,0 +1,212 @@
+[
+  {
+    "order_no": "202609010001",
+    "user_id": "u1001",
+    "status": "已签收",
+    "status_code": "delivered",
+    "created_at": "2026-09-01 10:23:15",
+    "paid_at": "2026-09-01 10:25:02",
+    "shipped_at": "2026-09-01 18:40:00",
+    "finished_at": "2026-09-04 14:12:30",
+    "total_amount": 459.00,
+    "payment_method": "微信支付",
+    "receiver": "张伟",
+    "phone": "138****6621",
+    "address": "浙江省杭州市西湖区文三路 100 号 3 幢 502 室",
+    "products": [
+      { "sku": "SKU-A1001", "name": "无线蓝牙耳机 Pro", "price": 399.00, "quantity": 1 },
+      { "sku": "SKU-B2003", "name": "硅胶耳塞套（3 对装）", "price": 60.00, "quantity": 1 }
+    ],
+    "logistics": {
+      "company": "顺丰速运",
+      "tracking_no": "SF1380001234567",
+      "status": "已签收",
+      "traces": [
+        { "time": "2026-09-01 18:40", "desc": "卖家已发货，顺丰速运已揽收" },
+        { "time": "2026-09-02 03:10", "desc": "快件已到达【杭州转运中心】" },
+        { "time": "2026-09-03 08:20", "desc": "快件已到达【杭州西湖营业点】" },
+        { "time": "2026-09-04 14:12", "desc": "快件已签收，签收人：本人" }
+      ]
+    }
+  },
+  {
+    "order_no": "202609030002",
+    "user_id": "u1001",
+    "status": "运输中",
+    "status_code": "shipped",
+    "created_at": "2026-09-03 20:11:44",
+    "paid_at": "2026-09-03 20:13:10",
+    "shipped_at": "2026-09-04 09:30:00",
+    "finished_at": null,
+    "total_amount": 1299.00,
+    "payment_method": "支付宝",
+    "receiver": "张伟",
+    "phone": "138****6621",
+    "address": "浙江省杭州市西湖区文三路 100 号 3 幢 502 室",
+    "products": [
+      { "sku": "SKU-C3001", "name": "智能运动手表 GT5", "price": 1299.00, "quantity": 1 }
+    ],
+    "logistics": {
+      "company": "京东物流",
+      "tracking_no": "JD9876543210987",
+      "status": "运输中",
+      "traces": [
+        { "time": "2026-09-04 09:30", "desc": "商品已出库，京东物流已揽收" },
+        { "time": "2026-09-04 21:05", "desc": "快件已到达【上海分拣中心】" },
+        { "time": "2026-09-05 07:48", "desc": "快件已发往【杭州分拣中心】，正在运输中" }
+      ]
+    }
+  },
+  {
+    "order_no": "202609050003",
+    "user_id": "u1002",
+    "status": "待发货",
+    "status_code": "pending_shipment",
+    "created_at": "2026-09-05 15:02:33",
+    "paid_at": "2026-09-05 15:03:50",
+    "shipped_at": null,
+    "finished_at": null,
+    "total_amount": 89.90,
+    "payment_method": "微信支付",
+    "receiver": "李娜",
+    "phone": "139****3388",
+    "address": "广东省深圳市南山区科技园南路 66 号 A 座 1201",
+    "products": [
+      { "sku": "SKU-D4002", "name": "纯棉短袖 T 恤（男）", "price": 89.90, "quantity": 1 }
+    ],
+    "logistics": null
+  },
+  {
+    "order_no": "202609100004",
+    "user_id": "u1003",
+    "status": "待付款",
+    "status_code": "pending_payment",
+    "created_at": "2026-09-10 09:41:07",
+    "paid_at": null,
+    "shipped_at": null,
+    "finished_at": null,
+    "total_amount": 268.00,
+    "payment_method": null,
+    "receiver": "王强",
+    "phone": "137****9012",
+    "address": "北京市朝阳区建国路 88 号 SOHO 现代城 C 座 701",
+    "products": [
+      { "sku": "SKU-E5001", "name": "不锈钢保温杯 500ml", "price": 128.00, "quantity": 1 },
+      { "sku": "SKU-E5002", "name": "杯刷套装", "price": 40.00, "quantity": 1 },
+      { "sku": "SKU-E5003", "name": "户外便携茶包", "price": 100.00, "quantity": 1 }
+    ],
+    "logistics": null
+  },
+  {
+    "order_no": "202609040005",
+    "user_id": "u1001",
+    "status": "退款中",
+    "status_code": "refunding",
+    "created_at": "2026-09-04 11:15:20",
+    "paid_at": "2026-09-04 11:16:40",
+    "shipped_at": "2026-09-04 16:00:00",
+    "finished_at": null,
+    "total_amount": 199.00,
+    "payment_method": "银行卡",
+    "receiver": "张伟",
+    "phone": "138****6621",
+    "address": "浙江省杭州市西湖区文三路 100 号 3 幢 502 室",
+    "products": [
+      { "sku": "SKU-F6001", "name": "机械键盘 87 键", "price": 199.00, "quantity": 1 }
+    ],
+    "logistics": {
+      "company": "中通快递",
+      "tracking_no": "ZTO4567890123456",
+      "status": "已签收",
+      "traces": [
+        { "time": "2026-09-04 16:00", "desc": "卖家已发货，中通快递已揽收" },
+        { "time": "2026-09-05 10:30", "desc": "快件已到达【杭州转运中心】" },
+        { "time": "2026-09-06 16:45", "desc": "快件已签收，签收人：门卫代收" }
+      ]
+    },
+    "refund": {
+      "reason": "商品与描述不符（键帽颜色偏差）",
+      "apply_at": "2026-09-07 09:20:00",
+      "amount": 199.00,
+      "status": "商家审核中"
+    }
+  },
+  {
+    "order_no": "202609020006",
+    "user_id": "u1002",
+    "status": "已取消",
+    "status_code": "cancelled",
+    "created_at": "2026-09-02 22:05:11",
+    "paid_at": "2026-09-02 22:06:30",
+    "shipped_at": null,
+    "finished_at": null,
+    "total_amount": 59.00,
+    "payment_method": "微信支付",
+    "receiver": "李娜",
+    "phone": "139****3388",
+    "address": "广东省深圳市南山区科技园南路 66 号 A 座 1201",
+    "products": [
+      { "sku": "SKU-G7001", "name": "手机钢化膜（2 片装）", "price": 59.00, "quantity": 1 }
+    ],
+    "logistics": null,
+    "cancel_reason": "用户主动取消（拍错型号）"
+  },
+  {
+    "order_no": "202609070007",
+    "user_id": "u1003",
+    "status": "已完成",
+    "status_code": "completed",
+    "created_at": "2026-09-07 13:30:05",
+    "paid_at": "2026-09-07 13:31:22",
+    "shipped_at": "2026-09-07 19:10:00",
+    "finished_at": "2026-09-10 09:05:00",
+    "total_amount": 88.00,
+    "payment_method": "支付宝",
+    "receiver": "王强",
+    "phone": "137****9012",
+    "address": "北京市朝阳区建国路 88 号 SOHO 现代城 C 座 701",
+    "products": [
+      { "sku": "SKU-H8001", "name": "桌面收纳盒（三格）", "price": 88.00, "quantity": 1 }
+    ],
+    "logistics": {
+      "company": "圆通速递",
+      "tracking_no": "YT7890123456789",
+      "status": "已签收",
+      "traces": [
+        { "time": "2026-09-07 19:10", "desc": "卖家已发货，圆通速递已揽收" },
+        { "time": "2026-09-08 12:00", "desc": "快件已到达【北京转运中心】" },
+        { "time": "2026-09-09 09:30", "desc": "快件已到达【北京朝阳营业点】" },
+        { "time": "2026-09-10 09:05", "desc": "快件已签收，签收人：本人" }
+      ]
+    }
+  },
+  {
+    "order_no": "202612345678",
+    "user_id": "u1004",
+    "status": "运输中",
+    "status_code": "shipped",
+    "created_at": "2026-09-11 09:20:41",
+    "paid_at": "2026-09-11 09:22:05",
+    "shipped_at": "2026-09-11 20:15:00",
+    "finished_at": null,
+    "total_amount": 379.00,
+    "payment_method": "微信支付",
+    "receiver": "陈静",
+    "phone": "136****4455",
+    "address": "江苏省南京市玄武区中山路 199 号 2 栋 1806",
+    "products": [
+      { "sku": "SKU-I9001", "name": "人体工学办公椅", "price": 349.00, "quantity": 1 },
+      { "sku": "SKU-I9002", "name": "椅背腰靠", "price": 30.00, "quantity": 1 }
+    ],
+    "logistics": {
+      "company": "顺丰速运",
+      "tracking_no": "SF1380007654321",
+      "status": "运输中",
+      "traces": [
+        { "time": "2026-09-11 20:15", "desc": "卖家已发货，顺丰速运已揽收" },
+        { "time": "2026-09-12 06:40", "desc": "快件已到达【苏州转运中心】" },
+        { "time": "2026-09-12 22:10", "desc": "快件已发往【南京分拨中心】，正在运输中" }
+      ]
+    }
+  }
+]

@@ -1,0 +1,15 @@
+{
+  "name": "@nora/api",
+  "version": "0.7.0",
+  "private": true,
+  "description": "NORA FastAPI backend · 智能客服 + 离线 ASR",
+  "scripts": {
+    "dev": ".\\.venv\\Scripts\\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8002 --reload",
+    "dev:asr": "cross-env HF_ENDPOINT=https://hf-mirror.com HF_HUB_DISABLE_XET=1 HF_HUB_DISABLE_SYMLINKS=1 .\\.venv\\Scripts\\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8002 --reload",
+    "test": ".\\.venv\\Scripts\\python.exe -m pytest -q",
+    "lint": ".\\.venv\\Scripts\\python.exe -m ruff check"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
+  }
+}

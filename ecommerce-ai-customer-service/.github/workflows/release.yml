@@ -1,0 +1,223 @@
+# =============================================================================
+# Release workflow
+#   触发：发布 GitHub Release（手动或 webhook）+ 手动 workflow_dispatch
+#   行为：构建并推送 ASR 镜像到 GHCR，标签：
+#     * ghcr.io/<owner>/<repo>/ecs:asr-base
+#     * ghcr.io/<repo>/ecs:asr-base
+#     * ghcr.io/<owner>/<repo>/ecs:asr-small
+#     * ghcr.io/<repo>/ecs:asr-small
+#     * 版本标签：<version>（对应 base / small 两镜像各自的版本）
+#
+#   构建参数：
+#     * 多平台：linux/amd64, linux/arm64（适配 Apple Silicon / 鲲鹏）
+#     * PRELOAD_MODEL=1：模型 baked 进镜像，首请求 0 延迟
+#     * ASR_MODEL_SIZE：base / small
+#
+#   缓存：
+#     * GitHub Actions 内置 cache（type=gha），从 ghcr.io 拉/推层
+#
+#   注意：
+#     1. permissions.contents + packages 必填，否则登录 GHCR 会 403
+#     2. tags 必须在 GHCR lowercase / [a-z0-9-_] / ≤128 字符
+# =============================================================================
+name: release
+
+on:
+  # 当用户发布 GitHub Release（draft 也会触发；要正式发布再去 publish）
+  release:
+    types: [published]
+  # 允许手动触发测试
+  workflow_dispatch:
+    inputs:
+      asr_model_size:
+        description: "预烤的 ASR 模型（base / small / both）"
+        required: true
+        default: "both"
+        type: choice
+        options:
+          - base
+          - small
+          - both
+      dry_run:
+        description: "Dry-run（构建不推送，仅验证 manifest）"
+        required: false
+        default: "false"
+        type: boolean
+
+permissions:
+  contents: read       # 拉取 checkout
+  packages: write      # 推送到 ghcr.io
+
+concurrency:
+  # 同 tag 不并发（避免覆盖）；旧的 cancel in-progress 即可
+  group: release-${{ github.event.release.tag_name || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  asr-images:
+    name: ASR image (${{ matrix.model_size }}, preloaded)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        # 决定构建哪些模型：both 时跑两个；否则只跑指定的
+        include:
+          - model_size: base
+            tag_suffix: base
+          - model_size: small
+            tag_suffix: small
+
+    steps:
+      - name: Decide whether to build this model
+        id: filter
+        env:
+          INPUT: ${{ github.event.inputs.asr_model_size || '' }}
+          MODEL_SIZE: ${{ matrix.model_size }}
+        run: |
+          # 仅 workflow_dispatch 需要按 input 过滤；release 总是全 build
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            if [ "$INPUT" != "both" ] && [ "$INPUT" != "$MODEL_SIZE" ]; then
+              echo "skip=matrix_filter" >> "$GITHUB_OUTPUT"
+              echo "::notice::Skipping $MODEL_SIZE (input=$INPUT)"
+              exit 0
+            fi
+          fi
+          echo "skip=" >> "$GITHUB_OUTPUT"
+
+      - name: Skip
+        if: steps.filter.outputs.skip != ''
+        run: |
+          echo "::notice::Skipping ${{ matrix.model_size }} image: ${{ steps.filter.outputs.skip }}"
+          echo "would_skip=true" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        if: steps.filter.outputs.skip == ''
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        if: steps.filter.outputs.skip == ''
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        if: steps.filter.outputs.skip == ''
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: steps.filter.outputs.skip == ''
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ----------------------------------------------------------------------
+      # 元数据：生成规范标签
+      #   - 全限定：ghcr.io/<owner>/<repo>/ecs:asr-{base|small}-{version}
+      #   - 主标签：ghcr.io/<owner>/<repo>/ecs:asr-{base|small}
+      #   - 短形式：ghcr.io/<repo>/ecs:asr-{base|small}（owner=repo 时等价）
+      # ----------------------------------------------------------------------
+      - name: Extract version
+        if: steps.filter.outputs.skip == ''
+        id: meta
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            # strip leading v
+            VERSION="${VERSION#v}"
+          else
+            # workflow_dispatch：用当前短 SHA + run_number
+            VERSION="0.0.0-${GITHUB_SHA::7}-r${GITHUB_RUN_NUMBER}"
+          fi
+          # sanitize（最多保留 128 字符，GHCR 上限）
+          SAFE_VERSION="$(echo "$VERSION" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9._-]+/-/g')"
+          echo "version=$SAFE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved ASR image version: $SAFE_VERSION"
+
+      - name: Set up metadata
+        if: steps.filter.outputs.skip == ''
+        id: meta-tags
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          tags: |
+            type=raw,value=ecs:asr-${{ matrix.tag_suffix }}-${{ steps.meta.outputs.version }}
+            type=raw,value=ecs:asr-${{ matrix.tag_suffix }}
+            # 短形式（去掉 owner，等价）
+            type=raw,value=ghcr.io/${{ github.event.repository.name }}/ecs:asr-${{ matrix.tag_suffix }}
+          # GHCR 加 flavor：latest-…/stable-… 这里不用，PR 不触发，保持 release only
+
+      - name: Build and push (preload=${{ matrix.model_size }})
+        if: steps.filter.outputs.skip == ''
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.slim
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name == 'release' || (github.event.inputs.dry_run || 'false') == 'false' }}
+          load: false
+          tags: ${{ steps.meta-tags.outputs.tags }}
+          labels: |
+            org.opencontainers.image.title=ecommerce-ai-customer-service
+            org.opencontainers.image.description=${{ matrix.model_size }} ASR model preloaded
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.meta.outputs.version }}
+          build-args: |
+            WITH_ASR=1
+            PRELOAD_MODEL=1
+            ASR_MODEL_SIZE=${{ matrix.model_size }}
+          cache-from: type=gha,scope=asr-${{ matrix.model_size }}
+          cache-to: type=gha,mode=max,scope=asr-${{ matrix.model_size }}
+          provenance: false
+          sbom: false
+
+      - name: Smoke-test built image
+        if: steps.filter.outputs.skip == '' && github.event_name == 'release'
+        run: |
+          # 拉多平台 manifest 任一架构跑冒烟：loaded=true（证明 PRELOAD 实际生效）
+          # 因 BuildKit 没 save，用 docker pull + run
+          REF="ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:ecs-asr-${{ matrix.tag_suffix }}-${{ steps.meta.outputs.version }}"
+          echo "Pulling $REF..."
+          docker pull "$REF"
+          docker tag "$REF" "local-test:asr-${{ matrix.tag_suffix }}"
+          CID=$(docker run -d --rm \
+            -e ASR_ENABLED=true \
+            -e ASR_MODEL_SIZE=${{ matrix.model_size }} \
+            -e DATA_DIR=data -e LOG_DB_PATH=data/app.db \
+            -p 8765:8000 \
+            "local-test:asr-${{ matrix.tag_suffix }}")
+          echo "container=$CID"
+          for i in $(seq 1 30); do
+            status=$(docker inspect --format='{{.State.Health.Status}}' "$CID" 2>/dev/null || echo "starting")
+            if [ "$status" = "healthy" ]; then
+              echo "healthy after ${i}x2s"
+              break
+            fi
+            sleep 2
+          done
+          echo "/asr/status:"
+          curl -fsS http://127.0.0.1:8765/asr/status
+          echo
+          # 验证 loaded=true 是 PRELOAD 实际生效的强证据
+          LOADED=$(curl -fsS http://127.0.0.1:8765/asr/status | python -c "import json,sys; print(json.loads(sys.stdin.read())['loaded'])")
+          if [ "$LOADED" != "True" ]; then
+            echo "::error::PRELOAD 失败：loaded=$LOADED（应 True）。命名 volume 是否遮罩了 baked 模型？"
+            exit 1
+          fi
+          docker rm -f "$CID" >/dev/null
+          echo "✅ asr-${{ matrix.tag_suffix }} 实测 loaded=True，PRELOAD 生效"
+
+      - name: Update release notes
+        if: steps.filter.outputs.skip == '' && github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          body: |
+            ## ASR 镜像
+            - `docker pull ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:ecs-asr-${{ matrix.tag_suffix }}-${{ steps.meta.outputs.version }}`
+            - 模型：**${{ matrix.model_size }}**（预烤，首请求 0 延迟）
+            - 多平台：`linux/amd64` + `linux/arm64`
+            - 启动：`docker compose --profile asr-preloaded up -d`（详见 README）
+          fail_on_unmatched_files: true
+          token: ${{ secrets.GITHUB_TOKEN }}

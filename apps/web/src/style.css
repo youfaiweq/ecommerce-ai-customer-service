@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------- Base reset & typography ---------- */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+::selection {
+  background: #0071E3;
+  color: #ffffff;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* ---------- Subtle focus ring (Apple-style) ---------- */
+:focus-visible {
+  outline: 2px solid #0071E3;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- Utility: Apple pill button base ---------- */
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-pill bg-accent px-6 py-3 text-sm font-medium text-white transition-all duration-200 ease-out;
+  }
+  .btn-primary:hover {
+    @apply bg-accent-hover;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-pill border border-ink-primary px-6 py-3 text-sm font-medium text-ink-primary transition-all duration-200 ease-out;
+  }
+  .btn-outline:hover {
+    @apply bg-ink-primary text-white;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center text-sm font-medium text-ink-body transition-colors;
+  }
+  .btn-ghost:hover {
+    @apply text-ink-primary;
+  }
+  .container-x {
+    @apply mx-auto max-w-container px-6 lg:px-12;
+  }
+  .pill-tag {
+    @apply inline-flex items-center gap-1 rounded-pill bg-bg-tint px-3 py-1 text-2xs font-medium text-ink-body;
+  }
+  .pill-tag-blue {
+    @apply inline-flex items-center gap-1 rounded-pill bg-accent-soft px-3 py-1 text-2xs font-medium text-accent;
+  }
+  .nav-link {
+    @apply text-sm text-ink-body transition-colors duration-150;
+  }
+  .nav-link:hover {
+    @apply text-ink-primary;
+  }
+  .nav-link--active {
+    @apply text-ink-primary;
+  }
+  .eyebrow {
+    @apply text-2xs font-medium uppercase tracking-[0.08em] text-ink-quiet;
+  }
+  .section-title {
+    @apply text-3xl font-semibold leading-tight tracking-tight text-ink-primary lg:text-3xl;
+  }
+  .price {
+    @apply font-medium text-ink-body;
+  }
+  .price--strike {
+    @apply text-ink-quiet line-through;
+  }
+}

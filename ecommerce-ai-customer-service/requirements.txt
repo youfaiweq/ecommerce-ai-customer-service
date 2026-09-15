@@ -1,0 +1,38 @@
+# ---- 电商智能客服 项目依赖 ----
+# 安装: pip install -r requirements.txt
+
+# Web 框架
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+
+# Form / multipart（/chat/audio 音频上传）
+python-multipart>=0.0.9
+
+# 配置管理
+pydantic>=2.6.0
+pydantic-settings>=2.2.0
+python-dotenv>=1.0.0
+
+# HTTP 客户端（调用大模型 / 第三方接口）
+httpx>=0.27.0
+
+# 大模型 SDK（OpenAI 兼容接口，可用于官方 / Ollama / 第三方）
+openai>=1.30.0
+
+# 数据校验 / 序列化
+# （pydantic 已包含，如需额外模型可在此追加）
+
+# ============================================================
+# 知识库检索
+# 默认后端为 tfidf（纯 Python，无需额外依赖）。
+# 如需语义检索，取消下面两行注释，并将 .env 中
+# RETRIEVER_BACKEND 设为 embedding（或 auto）。
+# 注意：sentence-transformers 会连带安装 torch，体积较大。
+# ============================================================
+# sentence-transformers>=3.0.0
+# faiss-cpu>=1.8.0
+
+# ---- 以下为后续业务可能需要的依赖（暂未启用，按需取消注释）----
+# sqlalchemy>=2.0.0        # ORM
+# aiosqlite>=0.20.0        # SQLite 异步驱动（当前用 stdlib + asyncio.Queue 实现）
+# numpy>=1.26.0            # 向量 / 数值计算

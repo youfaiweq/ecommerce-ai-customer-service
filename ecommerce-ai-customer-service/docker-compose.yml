@@ -1,0 +1,127 @@
+# ============================================================
+# docker compose 一键启动
+#
+# 默认（alpine，无 ASR）：
+#   docker compose up -d --build
+# ASR（无预烤，运行时按需下载 + 命名 volume 缓存）：
+#   docker compose --profile asr up -d --build
+# ASR 预烤版（模型 baked 进镜像，**不**挂 volume；GHCR release 镜像 / 本机手工 build）：
+#   docker compose --profile asr-preloaded up -d --build
+#
+# .env 中的 OPENAI_API_KEY / OPENAI_BASE_URL / MODEL_NAME 等会被自动注入容器。
+#
+# ⚠️ PRELOAD 注意：
+#   PRELOAD_MODEL=1 时镜像 baked 了模型到 /home/app/.cache/huggingface/hub/。
+#   若再挂一个 named volume 到 /home/app/.cache/huggingface，volume 会"遮罩"
+#   镜像 baked 的目录，导致 PRELOAD 失效、运行时反而去 HF 重新下载。
+#   因此拆成两个 profile：
+#     * asr            → 运行时不预烤，挂 asr-cache 持久化运行时下载的模型
+#     * asr-preloaded  → 预烤到镜像，**不挂** 体积（适合 release / CI）
+# ============================================================
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile        # alpine，默认 ~175MB
+    image: ecommerce-ai-customer-service:latest
+    container_name: ecommerce-ai-cs
+    ports:
+      - "8000:8000"
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8000"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      MODEL_NAME: ${MODEL_NAME:-gpt-4o-mini}
+      TEMPERATURE: ${TEMPERATURE:-0.7}
+      MAX_TOKENS: ${MAX_TOKENS:-1024}
+      DEBUG: ${DEBUG:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      RETRIEVER_BACKEND: ${RETRIEVER_BACKEND:-tfidf}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+      ASR_ENABLED: "false"          # alpine 镜像无 faster-whisper → 强制 false
+      DATA_DIR: data
+      LOG_DB_PATH: data/app.db
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8000,http://127.0.0.1:8000,null}
+      TZ: Asia/Shanghai
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # app-asr：slim + faster-whisper，运行时按需下载模型（用 asr-cache volume 缓存）
+  # ---------------------------------------------------------------------------
+  app-asr:
+    build:
+      context: .
+      dockerfile: Dockerfile.slim
+      args:
+        WITH_ASR: "1"
+        PRELOAD_MODEL: "${PRELOAD_MODEL:-0}"
+        ASR_MODEL_SIZE: "${ASR_MODEL_SIZE:-small}"
+    image: ecommerce-ai-customer-service:asr
+    container_name: ecommerce-ai-cs-asr
+    ports:
+      - "8001:8000"
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8000"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      MODEL_NAME: ${MODEL_NAME:-gpt-4o-mini}
+      DEBUG: ${DEBUG:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ASR_ENABLED: "true"
+      ASR_MODEL_SIZE: ${ASR_MODEL_SIZE:-small}
+      PRELOAD_MODEL: ${PRELOAD_MODEL:-0}
+      DATA_DIR: data
+      LOG_DB_PATH: data/app.db
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8001,http://127.0.0.1:8001,null}
+      TZ: Asia/Shanghai
+    volumes:
+      - ./data:/app/data
+      - asr-cache:/home/app/.cache/huggingface   # 缓存运行时下载的模型
+    restart: unless-stopped
+    profiles: ["asr"]
+
+  # ---------------------------------------------------------------------------
+  # app-asr-preloaded：模型 baked 进镜像，**不挂** asr-cache volume
+  #   用于 GHCR release 镜像（ecs:asr-base / ecs:asr-small）
+  #   本地手 build：
+  #     PRELOAD_MODEL=1 docker compose --profile asr-preloaded build
+  #     docker compose --profile asr-preloaded up
+  # ---------------------------------------------------------------------------
+  app-asr-preloaded:
+    build:
+      context: .
+      dockerfile: Dockerfile.slim
+      args:
+        WITH_ASR: "1"
+        PRELOAD_MODEL: "1"
+        ASR_MODEL_SIZE: "${ASR_MODEL_SIZE:-base}"
+    image: ecommerce-ai-customer-service:asr-preloaded
+    container_name: ecommerce-ai-cs-asr-preloaded
+    ports:
+      - "8002:8000"
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8000"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      MODEL_NAME: ${MODEL_NAME:-gpt-4o-mini}
+      DEBUG: ${DEBUG:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ASR_ENABLED: "true"
+      ASR_MODEL_SIZE: ${ASR_MODEL_SIZE:-base}
+      PRELOAD_MODEL: "1"
+      DATA_DIR: data
+      LOG_DB_PATH: data/app.db
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8002,http://127.0.0.1:8002,null}
+      TZ: Asia/Shanghai
+    volumes:
+      - ./data:/app/data        # 仅挂数据；模型 baked 在镜像里
+    restart: unless-stopped
+    profiles: ["asr-preloaded"]
+
+volumes:
+  asr-cache:

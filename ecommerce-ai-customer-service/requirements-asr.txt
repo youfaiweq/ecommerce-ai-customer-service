@@ -1,0 +1,12 @@
+# ---- 可选 ASR（faster-whisper）依赖 ----
+# 仅在构建时通过 ``docker build --build-arg WITH_ASR=1`` 或
+# ``docker compose --profile asr ...`` 启用；默认镜像不包含以保持 < 200MB
+#
+# 体积增量预估：
+#   - faster-whisper wheel: ~5MB
+#   - ctranslate2 + numpy + onnxruntime wheels: ~250MB
+#   - av (ffmpeg bindings) wheel: ~30MB
+#   - 模型权重（运行时下载到 /home/app/.cache/huggingface）：small ~460MB，base ~140MB
+# 默认镜像只装下面这一行（套间依赖），模型权重都不进镜像（运行时懒加载）。
+# 用 ``--extra-index-url`` 指定 PyPI 镜像可显著加速国内下载。
+faster-whisper>=1.0.0

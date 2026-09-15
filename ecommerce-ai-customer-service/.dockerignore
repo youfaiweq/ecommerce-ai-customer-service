@@ -1,0 +1,39 @@
+# 版本控制 / 本地环境
+.git
+.gitignore
+.venv
+venv
+env
+
+# Python 缓存
+__pycache__
+*.py[cod]
+*.egg-info
+.pytest_cache
+.mypy_cache
+.ruff_cache
+htmlcov
+.coverage
+
+# 环境变量（密钥不進镜像，运行时通过 --env-file 注入）
+.env
+.env.*
+!.env.example
+
+# 本地数据 / 日志（运行时挂载）
+data/*.db
+data/*.db-wal
+data/*.db-shm
+*.log
+logs
+
+# 测试与文档（不需要进镜像）
+tests
+*.md
+!README.md
+
+# 编辑器 / 系统
+.idea
+.vscode
+.DS_Store
+Thumbs.db

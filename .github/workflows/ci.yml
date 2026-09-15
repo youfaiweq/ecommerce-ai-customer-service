@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    name: Web test and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run test:web
+      - run: npm run build:web
+
+  api:
+    name: API lint and test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ecommerce-ai-customer-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: ecommerce-ai-customer-service/requirements-dev.txt
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements-dev.txt
+      - run: ruff check app tests
+      - run: pytest
